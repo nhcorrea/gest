@@ -448,7 +448,11 @@ export default function Home() {
     .filter((d) => d.valor > 0);
 
   // Limitar eventos/times a 10 principais
-  function topN(arr, key, n = 10) {
+  function topN<T extends { lucro: number }>(
+    arr: T[],
+    key: keyof T,
+    n = 10
+  ): T[] {
     if (arr.length <= n) return arr;
     const sorted = [...arr].sort(
       (a, b) => Math.abs(b.lucro) - Math.abs(a.lucro)
@@ -456,7 +460,8 @@ export default function Home() {
     const top = sorted.slice(0, n);
     const outros = sorted.slice(n);
     const outrosLucro = outros.reduce((acc, cur) => acc + cur.lucro, 0);
-    return [...top, { [key]: "Outros", lucro: outrosLucro }];
+    const outrosObj = { ...top[0], [key]: "Outros", lucro: outrosLucro };
+    return [...top, outrosObj];
   }
   const lucroPorEventoArrTop = topN(lucroPorEventoArr, "event");
   const lucroPorTimeRealArrTop = topN(lucroPorTimeRealArr, "team");
