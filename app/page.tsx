@@ -167,14 +167,14 @@ export default function Home() {
 
   function handleAddBet(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // Calcula retorno da aposta
+    // Calcula retorno bruto da aposta
     let returnValue = 0;
     const oddsNum = Number(betForm.odds);
     const valueNum = Number(betForm.value);
     if (betForm.result === "win") {
-      returnValue = oddsNum && valueNum ? valueNum * (oddsNum - 1) : 0;
+      returnValue = oddsNum && valueNum ? valueNum * oddsNum : 0;
     } else if (betForm.result === "red") {
-      returnValue = -valueNum;
+      returnValue = 0;
     }
     setBets((prev) => [
       ...prev,
@@ -218,9 +218,9 @@ export default function Home() {
         const valueNum = Number(bet.value);
         let returnValue = 0;
         if (result === "win") {
-          returnValue = oddsNum && valueNum ? valueNum * (oddsNum - 1) : 0;
+          returnValue = oddsNum && valueNum ? valueNum * oddsNum : 0;
         } else if (result === "red") {
-          returnValue = -valueNum;
+          returnValue = 0;
         }
         return { ...bet, result, returnValue };
       })
@@ -328,8 +328,9 @@ export default function Home() {
     (acc, b) => acc + (b.returnValue || 0),
     0
   );
+  const lucroTotal = totalReturn - totalInvested;
   const roi = totalInvested
-    ? ((totalReturn / totalInvested) * 100).toFixed(2)
+    ? ((lucroTotal / totalInvested) * 100).toFixed(2)
     : "0.00";
   const winCount = betsForCharts.filter((b) => b.result === "win").length;
   const winRate = betsForCharts.length
@@ -345,7 +346,7 @@ export default function Home() {
   [...betsForCharts]
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .forEach((b) => {
-      acc += b.returnValue || 0;
+      acc += (b.returnValue || 0) - Number(b.value);
       bankrollData.push({
         date: new Date(b.date).toLocaleDateString("pt-BR"),
         saldo: acc,
@@ -356,7 +357,7 @@ export default function Home() {
   const lucroPorJogo: Record<string, number> = {};
   betsForCharts.forEach((b) => {
     if (!lucroPorJogo[b.game]) lucroPorJogo[b.game] = 0;
-    lucroPorJogo[b.game] += b.returnValue || 0;
+    lucroPorJogo[b.game] += (b.returnValue || 0) - Number(b.value);
   });
   const lucroPorJogoArr = Object.entries(lucroPorJogo).map(([game, lucro]) => ({
     game,
@@ -367,7 +368,7 @@ export default function Home() {
   const lucroPorTier: Record<string, number> = {};
   betsForCharts.forEach((b) => {
     if (!lucroPorTier[b.tier]) lucroPorTier[b.tier] = 0;
-    lucroPorTier[b.tier] += b.returnValue || 0;
+    lucroPorTier[b.tier] += (b.returnValue || 0) - Number(b.value);
   });
   const lucroPorTierArr = Object.entries(lucroPorTier).map(([tier, lucro]) => ({
     tier,
@@ -378,7 +379,7 @@ export default function Home() {
   const lucroPorEvento: Record<string, number> = {};
   betsForCharts.forEach((b) => {
     if (!lucroPorEvento[b.event]) lucroPorEvento[b.event] = 0;
-    lucroPorEvento[b.event] += b.returnValue || 0;
+    lucroPorEvento[b.event] += (b.returnValue || 0) - Number(b.value);
   });
   const lucroPorEventoArr = Object.entries(lucroPorEvento).map(
     ([event, lucro]) => ({ event, lucro })
@@ -388,7 +389,7 @@ export default function Home() {
   const lucroPorTipo: Record<string, number> = {};
   betsForCharts.forEach((b) => {
     if (!lucroPorTipo[b.type]) lucroPorTipo[b.type] = 0;
-    lucroPorTipo[b.type] += b.returnValue || 0;
+    lucroPorTipo[b.type] += (b.returnValue || 0) - Number(b.value);
   });
   const lucroPorTipoArr = Object.entries(lucroPorTipo).map(([type, lucro]) => ({
     type,
@@ -401,7 +402,7 @@ export default function Home() {
     const nomeTime = b.selectedTeam === "A" ? b.teamA : b.teamB;
     if (!nomeTime) return;
     if (!lucroPorTimeReal[nomeTime]) lucroPorTimeReal[nomeTime] = 0;
-    lucroPorTimeReal[nomeTime] += b.returnValue || 0;
+    lucroPorTimeReal[nomeTime] += (b.returnValue || 0) - Number(b.value);
   });
   const lucroPorTimeRealArr = Object.entries(lucroPorTimeReal).map(
     ([team, lucro]) => ({ team, lucro })
@@ -410,8 +411,10 @@ export default function Home() {
   // Lucro por resultado (win/red)
   const lucroPorResultado: Record<string, number> = { win: 0, red: 0 };
   betsForCharts.forEach((b) => {
-    if (b.result === "win") lucroPorResultado.win += b.returnValue || 0;
-    if (b.result === "red") lucroPorResultado.red += b.returnValue || 0;
+    if (b.result === "win")
+      lucroPorResultado.win += (b.returnValue || 0) - Number(b.value);
+    if (b.result === "red")
+      lucroPorResultado.red += (b.returnValue || 0) - Number(b.value);
   });
   const lucroPorResultadoArr = [
     { resultado: "Win", lucro: lucroPorResultado.win },
@@ -925,10 +928,10 @@ export default function Home() {
             <span className="block text-gray-500">Lucro Total</span>
             <span
               className={`text-2xl font-bold ${
-                totalReturn >= 0 ? "text-green-600" : "text-red-600"
+                lucroTotal >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
-              {totalReturn.toLocaleString("pt-BR", {
+              {lucroTotal.toLocaleString("pt-BR", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
