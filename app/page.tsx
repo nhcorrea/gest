@@ -169,8 +169,8 @@ export default function Home() {
     e.preventDefault();
     // Calcula retorno bruto da aposta
     let returnValue = 0;
-    const oddsNum = Number(betForm.odds);
-    const valueNum = Number(betForm.value);
+    const oddsNum = Number(betForm.odds.replace(/,/g, "."));
+    const valueNum = Number(betForm.value.replace(/,/g, "."));
     if (betForm.result === "win") {
       returnValue = oddsNum && valueNum ? valueNum * oddsNum : 0;
     } else if (betForm.result === "red") {
@@ -186,6 +186,7 @@ export default function Home() {
           betForm.game === "Outro" && betForm.customGameName
             ? betForm.customGameName
             : betForm.game,
+        value: betForm.value.replace(/,/g, "."),
         returnValue,
       },
     ]);
@@ -741,12 +742,18 @@ export default function Home() {
               <span className="font-medium">Valor:</span>
               <input
                 type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
+                inputMode="decimal"
+                pattern="^\d+(\.|,)?\d*$"
                 name="value"
-                min="1"
+                min="0.01"
                 value={betForm.value}
-                onChange={handleBetFormChange}
+                onChange={(e) => {
+                  // Permite apenas números, ponto ou vírgula
+                  let val = e.target.value.replace(/[^\d.,]/g, "");
+                  // Substitui vírgula por ponto
+                  val = val.replace(/,/g, ".");
+                  setBetForm((prev) => ({ ...prev, value: val }));
+                }}
                 placeholder="Valor da aposta"
                 className="border rounded px-2 py-1 w-32 appearance-none"
                 required
